@@ -88,9 +88,11 @@ function parseCommand(command) {
 }
 
 function appendToLog(text) {
-    text = text + '<br/>';
-    log.innerHTML += text;
-    scrollToBottom(cons[0]);
+    if (text != '') {
+        text = text + '<br/>';
+        log.innerHTML += text;
+        scrollToBottom(cons[0]);
+    }
 }
 
 function clearLog() {

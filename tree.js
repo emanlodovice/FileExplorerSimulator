@@ -121,6 +121,20 @@ Tree = function(key, is_directory, parent) {
         }
         return clone;
     }
+
+    this.find = function(regex) {
+        var res = []
+        for (var key in this.sub_trees) {
+            if (regex.test(key) == true) {
+                res.push(this.sub_trees[key]);
+            }
+        }
+        for (var key in this.sub_trees) {
+            var d = this.sub_trees[key].find(regex)
+            res = res.concat(d);
+        }
+        return res;
+    }
 }
 
 function test() {

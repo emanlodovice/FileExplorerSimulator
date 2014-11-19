@@ -53,11 +53,15 @@ FileSystem = function() {
             parsePathRegex(params, function(res) {
                 if (res.code == 200) {
                     res['text'] = '';
-                    for (var i=0; i < res.trees.length; i++) {
-                        if (res['text'] != '') {
-                            res['text'] += '\n';
+                    if (res['trees'].length > 0) {
+                        for (var i=0; i < res.trees.length; i++) {
+                            if (res['text'] != '') {
+                                res['text'] += '\n';
+                            }
+                            res['text'] += res['trees'][i].key;
                         }
-                        res['text'] += res['trees'][i].key;
+                    }   else {
+                        res['text'] = 'No such file or directory!';
                     }
                     callback(res);
                 }   else {
@@ -130,7 +134,6 @@ FileSystem = function() {
     }
 
     this.save = function(text, callback) {
-        console.log(_this.tree_to_change);
         if (this.tree_to_change != null) {
             this.tree_to_change.content += text;
             this.tree_to_change = null;
@@ -140,7 +143,25 @@ FileSystem = function() {
         }
     }
 
-    this.rm = function(params, callback) {console.log('rm')}
+    this.rm = function(params, callback) {
+        parsePathRegex(params, function(res) {
+            if (res.code == 200) {
+                res['text'] = '';
+                if (res['trees'].length > 0) {
+                    for (var i=0; i < res.trees.length; i++) {
+                        res.trees[i].delete();
+                    }
+                }   else {
+                    res['code'] = 404;
+                    res['msg'] = 'No such file or directory!';
+                }
+                callback(res);
+            }   else {
+                callback(res);
+            }  
+        })
+    }
+
 
     this.show = function(params, callback) {
         parsePath(params, false, false, function(res) {
@@ -205,7 +226,6 @@ FileSystem = function() {
                         }   else if (res2['code'] != 200) {
                             parsePath(new_path, true, res['current_tree'].is_directory, function(res3) {
                                 if (res3['code'] == 200) {
-                                    console.log('super here');
                                     new_d = res3['current_tree'];
                                     res3['current_tree'] = null;
                                     parent = new_d.parent
@@ -214,7 +234,6 @@ FileSystem = function() {
                                     old_d.delete();
                                     old_d.key = new_d.key;
                                     parent.add_subtree(old_d);
-                                    console.log(parent);
                                     callback(res3);
                                 }   else {
                                     callback(res3);
@@ -280,6 +299,22 @@ FileSystem = function() {
         }   else {
             callback({'code': 404, 'msg': 'cp requires 2 parameters.'});   
         }
+    }
+
+    this.whereis = function(params, callback) {
+        var regex = RegExp(convertToRegEx(params));
+        var trees = this.current_dir.find(regex);
+        var res = {'code':200, 'current_tree': null, 'text':''};
+        if (trees.length <= 0) {
+            res['text'] = 'No results found!';
+        }
+        for (var i = 0; i < trees.length; i++) {
+            if (res['text'] != '') {
+                res['text'] += '\n';
+            }
+            res['text'] += trees[i].path();
+        }
+        callback(res);
     }
 
     this.help = function(params, callback) {
@@ -369,13 +404,8 @@ FileSystem = function() {
                 regex = RegExp(keys[i]);
                 results = [];
                 for (var key in trav_root.sub_trees) {
-                    // console.log(regex.test(key));
-                    // console.log(key);
-                    // console.log(regex);
                     if (regex.test(key) == true) {
-                        console.log(key);
                         results.push(trav_root.sub_trees[key]);
-                        console.log('results = ' + results);
                     }
                 }
                 callback({'code': 200, 'msg': 'Success', 'trees':results});
